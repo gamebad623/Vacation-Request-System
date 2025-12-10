@@ -16,7 +16,7 @@ class ApprovalController extends Controller
         return VacationRequestResource::collection($vacationRequests);
     }
 
-    public function approve($id){
+    public function approve($id , Request $request){
         $vacationRequest = VacationRequest::findOrFail($id);
         if($vacationRequest->status !== 'pending'){
             return response()->json(['error' => 'Request already processed']);
@@ -42,6 +42,12 @@ class ApprovalController extends Controller
         
 
         $vacationRequest->status = 'approved';
+        if($request->user()->role === 'manager' ){
+            $vacationRequest->hr_id = $request->user()->id;
+        }elseif($request->user()->role === 'hr' && $vacationRequest->hr_id != null){
+            $vacationRequest->hr_id = $request->user()->id;
+        }
+        
         $vacationRequest->save();
 
         return new VacationRequestResource($vacationRequest);
@@ -49,7 +55,7 @@ class ApprovalController extends Controller
 
         
     }
-    public function reject($id){
+    public function reject($id , Request $request){
         $vacationRequest = VacationRequest::findOrFail($id);
 
         if($vacationRequest->status !== 'pending'){
@@ -57,6 +63,7 @@ class ApprovalController extends Controller
         }
 
         $vacationRequest->status = 'rejected';
+        $vacationRequest->hr_id = $request->user()->id;
         $vacationRequest->save();
 
         return new VacationRequestResource($vacationRequest);

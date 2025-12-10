@@ -9,9 +9,8 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/register', [RegisteredUserController::class, 'store'])
-    ->middleware('guest')
-    ->name('register');
+// Note: Registration is admin-only and handled in api.php
+// Login route is also available at /api/auth/login in api.php
 
 Route::post('/login', [LoginController::class, 'store'])
     ->middleware('guest')
@@ -26,13 +25,15 @@ Route::post('/reset-password', [NewPasswordController::class, 'store'])
     ->name('password.store');
 
 Route::get('/verify-email/{id}/{hash}', VerifyEmailController::class)
-    ->middleware(['auth:sanctum', 'signed', 'throttle:6,1'])
+    ->middleware(['signed', 'throttle:6,1'])
     ->name('verification.verify');
 
 Route::post('/email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
     ->middleware(['auth:sanctum', 'throttle:6,1'])
     ->name('verification.send');
 
+// Note: Logout route is also available at /api/auth/logout in api.php
+// Keeping both for flexibility
 Route::post('/logout', [LoginController::class, 'destroy'])
     ->middleware('auth:sanctum')
     ->name('logout');

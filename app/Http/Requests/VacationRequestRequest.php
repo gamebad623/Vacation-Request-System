@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Date;
 
 class VacationRequestRequest extends FormRequest
 {
@@ -23,9 +24,16 @@ class VacationRequestRequest extends FormRequest
     {
         return [
             'vacation_type_id' => ['required' , 'exists:vacation_types,id'],
-            'start_date' => ['required' , 'date'],
-            'end_date' => ['required' , 'date'],
+            'start_date' => ['required' , 'date' , 'after_or_equal:today'],
+            'end_date' => ['required' , 'date' ,'after:start_date'],
             'reason' => ['nullable' , 'string']
+        ];
+    }
+    public function messages()
+    {
+        return[
+            'start_date.after_or_equal' => 'Start date must be today or in the future.',
+            'end_date.after' => 'End date must be after the start date.'
         ];
     }
 }

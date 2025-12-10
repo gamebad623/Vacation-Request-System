@@ -11,8 +11,16 @@ use Illuminate\Http\Request;
 
 class VacationRequestController extends Controller
 {
-    public function index(){
-        $vacationRequest =  VacationRequest::with(['user', 'vacationType'])->get();
+    public function index(Request $request){
+        $user = $request->user();
+        if(in_array($user->role , ['hr' , 'manager'])){
+            $vacationRequest =  VacationRequest::with(['user', 'vacationType'])->get();
+        }else{
+            $vacationRequest = VacationRequest::where('user_id' ,$user->id)
+                ->with(['user' , 'vacationType'])
+                ->get();
+        }
+        
         return VacationRequestResource::collection($vacationRequest);
     }
     public function myRequests(Request $request){
@@ -48,11 +56,18 @@ class VacationRequestController extends Controller
         return (new VacationRequestResource($vacationRequest))->response()->setStatusCode(201);
 
     }
-    public function show($id){
+    public function show(Request $request, $id){
         $vacationRequest = VacationRequest::with(['user', 'vacationType'])->findOrFail($id);
-        return new VacationRequestResource($vacationRequest);
-        
+        $user = $request->user();
 
+        $canView = $vacationRequest->user_id === $user->id || 
+                   in_array($user->role, ['admin', 'hr', 'manager']);
+
+        if (!$canView) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        return new VacationRequestResource($vacationRequest);
     }
     public function update(VacationRequest $vacationRequest, VacationRequestRequest $request){
         $validatedData = $request->validated();

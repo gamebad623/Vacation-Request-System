@@ -56,6 +56,7 @@ class VacationBalanceController extends Controller
         $existing = VacationBalance::where([
             'user_id' => $request->user_id,
             'vacation_type_id' => $request->vacation_type_id,
+            'balance' => $request->balance,
             'year' => $request->year
         ]) -> first();
 

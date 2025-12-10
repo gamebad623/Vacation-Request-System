@@ -17,7 +17,22 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'email' => $this->email
+            'email' => $this->email,
+            'role' => $this->role,
+            'email_verified_at' => $this->email_verified_at?->format('Y-m-d H:i:s'),
+            'department' => $this->whenLoaded('department', new DepartmentResource($this->department)),
+            // 'department' => $this->whenNotNull(
+            //     $this->department
+            //         ? new DepartmentResource($this->department)
+            //         : null
+            // ),
+
+
+            $this->mergeWhen($request->user()->role === 'admin' , [
+                'created_at' => $this->created_at->format('Y-m-d H:i:s'),
+                'updated_at' => $this->updated_at->format('Y-m-d H:i:s')
+            ]),
+            
         ];
     }
 }
