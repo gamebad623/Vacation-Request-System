@@ -46,7 +46,7 @@ Route::middleware('auth:sanctum')->group(function(){
         Route::apiResource('/vacation-balances' , VacationBalanceController::class);
     });
 
-    Route::middleware('verified')->group(function(){
+    Route::middleware(['verified' , 'role:employee'])->group(function(){
         Route::prefix('vacations')->group(function(){
             Route::post('/' , [VacationRequestController::class , 'store']);
             Route::get('/' , [VacationRequestController::class , 'myRequests']);

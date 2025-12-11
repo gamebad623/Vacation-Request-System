@@ -18,7 +18,7 @@ class ApprovalController extends Controller
 
     public function approve($id , Request $request){
         $vacationRequest = VacationRequest::findOrFail($id);
-        if($vacationRequest->status !== 'pending'){
+        if($vacationRequest->status === 'approved' || $vacationRequest->status === 'rejected'){
             return response()->json(['error' => 'Request already processed']);
         }
 
@@ -32,7 +32,7 @@ class ApprovalController extends Controller
             return response()->json(['error' => 'No balance for this year'] , 422);
         }
         if($balance->remaining < $vacationRequest->total_days){
-            return response()->json(['message' => 'Not enough balanc'] , 422);
+            return response()->json(['message' => 'Not enough balance'] , 422);
         }
 
         $balance->remaining -= $vacationRequest->total_days;
@@ -41,11 +41,16 @@ class ApprovalController extends Controller
 
         
 
-        $vacationRequest->status = 'approved';
+        
         if($request->user()->role === 'manager' ){
+            $vacationRequest->manager_id = $request->user()->id;
+            $vacationRequest->status = 'approved_manager';
+
+        }elseif($request->user()->role === 'hr' && $vacationRequest->manager_id != null){
             $vacationRequest->hr_id = $request->user()->id;
-        }elseif($request->user()->role === 'hr' && $vacationRequest->hr_id != null){
-            $vacationRequest->hr_id = $request->user()->id;
+            $vacationRequest->status = 'approved';
+        }else{
+            return response()->json(['message' => 'Manager should approve first']);
         }
         
         $vacationRequest->save();
@@ -58,8 +63,18 @@ class ApprovalController extends Controller
     public function reject($id , Request $request){
         $vacationRequest = VacationRequest::findOrFail($id);
 
-        if($vacationRequest->status !== 'pending'){
+        if($vacationRequest->status === 'approved' || $vacationRequest->status === 'rejected'){
             return response()->json(['error' => 'Request already processed']);
+        }
+        if($request->user()->role === 'manager' ){
+            $vacationRequest->manager_id = $request->user()->id;
+            $vacationRequest->status = 'rejected_manager';
+
+        }elseif($request->user()->role === 'hr' && $vacationRequest->manager_id != null){
+            $vacationRequest->hr_id = $request->user()->id;
+            $vacationRequest->status = 'rejected';
+        }else{
+            return response()->json(['message' => 'Manager should reject first']);
         }
 
         $vacationRequest->status = 'rejected';

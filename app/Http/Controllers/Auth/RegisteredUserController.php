@@ -38,7 +38,7 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         // Send verification email to the newly created user
-        $user->sendEmailVerificationNotification();
+        
 
         return response()->json([
             'message' => 'User created successfully. Verification email sent.',

@@ -23,6 +23,7 @@ class VacationRequestResource extends JsonResource
                 'end_date' => $this->end_date ? Carbon::parse($this->end_date )->format('Y-m-d'): null,
                 'total_days' => $this->total_days
             ],
+            'User' => new UserResource($this->whenLoaded('user')),
             'reason' => $this->reason,
             'status' => $this->status,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),

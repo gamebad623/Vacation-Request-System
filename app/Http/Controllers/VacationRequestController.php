@@ -9,6 +9,8 @@ use App\Models\VacationRequest;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
+use function Pest\Laravel\json;
+
 class VacationRequestController extends Controller
 {
     public function index(Request $request){
@@ -20,16 +22,19 @@ class VacationRequestController extends Controller
                 ->with(['user' , 'vacationType'])
                 ->get();
         }
-        
         return VacationRequestResource::collection($vacationRequest);
     }
+    
     public function myRequests(Request $request){
-        $vacations =  $request->user()->vacationRequest()->with('vacationType')->get();
+        $vacations =  $request->user()->vacationRequest()->with([ 'vacationType'])->get();
         return VacationRequestResource::collection($vacations);
     }
     public function store(VacationRequestRequest $request){
         $validatedData = $request->validated();
         $user = $request->user();
+
+        $start_date = $request->start_date;
+        $end_date = $request->end_date;
 
         $days = Carbon::parse($request->start_date)->diffInDays(Carbon::parse($request->end_date)) + 1;
         $year = Carbon::parse($request->start_date)->year;
@@ -45,6 +50,19 @@ class VacationRequestController extends Controller
 
         if($balance->remaining < $days)
             return response()->json(['error' => 'Not enough balance'] , 422);
+
+        $exists = VacationRequest::where('user_id' , $user->id)
+            ->whereIn('status' , ['pending' , 'approved'])
+            ->where('start_date' , '<=' , $end_date)
+            ->where('end_date' , '>=' , $start_date)
+            ->exists();
+
+        if($exists){
+            return response()->json(['dates' => 'You already have a vacation request in this date range.'] , 409);
+        }
+
+
+            
 
         
         $validatedData['user_id'] = $user->id;
@@ -72,6 +90,8 @@ class VacationRequestController extends Controller
     public function update(VacationRequest $vacationRequest, VacationRequestRequest $request){
         $validatedData = $request->validated();
         $user = $request->user();
+        $start_date = $request->start_date;
+        $end_date = $request->end_date;
 
         $days = Carbon::parse($request->start_date)->diffInDays(Carbon::parse($request->end_date)) + 1;
         $year = Carbon::parse($request->start_date)->year;
@@ -88,10 +108,29 @@ class VacationRequestController extends Controller
         if($balance->remaining < $days)
             return response()->json(['error' => 'Not enough balance'] , 422);
 
+        $exists = VacationRequest::where('user_id' , $user->id)
+            ->whereIn('status' , ['pending' , 'approved'])
+            ->where('start_date' , '<=' , $start_date)
+            ->where('end_date' , '>=' , $end_date)
+            ->exists();
+
+        if($exists){
+            return response()->json(['dates' => 'You already have a vacation request in this date range.'] , 409);
+        }
+        if($vacationRequest->status !== 'pending'){
+            return response()->json(['error' => 'Request cannot be edited|This request is already proccessed'] , 403);
+        }
+        if($request->user()->id !== $vacationRequest->user_id){
+            return response()->json(['error'=> 'Request vacation not found'], 404);
+        }
+
+
         $validatedData['user_id'] = $user->id;
         $validatedData['total_days'] = $days;
 
         $validatedData['status'] = 'pending';
+
+        
 
         $vacationRequest->update($validatedData);
         
@@ -101,8 +140,23 @@ class VacationRequestController extends Controller
         
     }
 
-    public function destroy(VacationRequest $vacationRequest){
-        $vacationRequest->delete();
-        return response()->json(["message" => "Deleted Successfully"]);
+    public function destroy(VacationRequest $vacationRequest , Request $request){
+        // if($vacationRequest->status === 'pending' && $request->user()->id == $vacationRequest->user_id){
+        //     $vacationRequest->delete();
+        //     return response()->json(["message" => "Deleted Successfully"]);
+        // }else{
+        //     return response()->json(['error' => 'Request cannot be deleted|This request might be for another user or its already proccessed'] , 403);
+        // }
+        if($vacationRequest->status !== 'pending'){
+            return response()->json(['error' => 'Request cannot be deleted|This request is already proccessed'] , 403);
+        }
+        if($request->user()->id !== $vacationRequest->user_id){
+            return response()->json(['error'=> 'Request vacation not found'], 404);
+        }else{
+            $vacationRequest->delete();
+            return response()->json(["message" => "Deleted Successfully"]);
+        }
+        
+        
     }
 }

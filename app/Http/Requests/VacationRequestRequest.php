@@ -25,7 +25,7 @@ class VacationRequestRequest extends FormRequest
         return [
             'vacation_type_id' => ['required' , 'exists:vacation_types,id'],
             'start_date' => ['required' , 'date' , 'after_or_equal:today'],
-            'end_date' => ['required' , 'date' ,'after:start_date'],
+            'end_date' => ['required' , 'date' ,'after_or_equal:start_date'],
             'reason' => ['nullable' , 'string']
         ];
     }

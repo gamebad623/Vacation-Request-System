@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('vacation_request_id')->constrained()->cascadeOnDelete();
             $table->foreignId('approved_by')->constrained('users')->cascadeOnDelete();
             $table->enum('role', ['manager', 'hr']);
-            $table->enum('status', ['approved', 'rejected']);
+            $table->enum('status', ['pending','approved', 'rejected','approved_manager' , 'rejected_manager']);
             $table->text('note')->nullable();
             $table->timestamps();
         });
